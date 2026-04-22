@@ -30,8 +30,9 @@ public:
 
         rec.t = root;
         rec.p = r.at(rec.t); //光线与球的交点
-        rec.normal = (rec.p - center) / radius; //归一化的法线
-
+        vec3 outward_normal = (rec.p - center) / radius;
+        rec.set_face_normal(r, outward_normal);
+        
         return true;
     }
 private:
