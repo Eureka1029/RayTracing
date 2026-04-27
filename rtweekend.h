@@ -3,11 +3,11 @@
 
 #include <vector>
 #include <limits>
-
+#include "interval.h"
 
 // 常量
 
-const double infinity = std::numeric_limits<double>::infinity(); //正无穷
+const double infinity = std::numeric_limits<double>::infinity(); //无穷
 const double pi = 3.1415926535897932385; //pi
 
 // 函数
