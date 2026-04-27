@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <limits>
-#include "interval.h"
 
 // 常量
 

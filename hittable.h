@@ -3,7 +3,7 @@
 
 //为光线可能击中的任何物体创建一个“抽象类”
 #include "ray.h"
-#include "rtweekend.h"
+#include "interval.h"
 
 class hit_record {
 public:
