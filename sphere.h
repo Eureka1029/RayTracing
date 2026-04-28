@@ -7,7 +7,9 @@
 
 class sphere : public hittable {
 public:
-    sphere(const point3& center, double radius) : center(center), radius(std::fmax(0, radius)) {};
+    sphere(const point3& center, double radius) : center(center), radius(std::fmax(0, radius)) {
+        // 需要初始化材质指针mat
+    };
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         vec3 oc = center - r.origin(); 
@@ -34,12 +36,14 @@ public:
         rec.p = r.at(rec.t); //光线与球的交点
         vec3 outward_normal = (rec.p - center) / radius;
         rec.set_face_normal(r, outward_normal);
+        rec.mat = mat;
         
         return true;
     }
 private:
     point3 center; //球心
     double radius; //半径
+    std::shared_ptr<material> mat; // 材质指针
     
 };
 

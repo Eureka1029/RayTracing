@@ -5,10 +5,13 @@
 #include "ray.h"
 #include "interval.h"
 
+class material;
+
 class hit_record {
 public:
     point3 p; //交点
     vec3 normal; //法线
+    std::shared_ptr<material> mat; //记录材质
     double t; //光线的t
     bool front_face; //光线打在内表面还是外表面 true为外, false为内
 

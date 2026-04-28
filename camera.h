@@ -3,6 +3,7 @@
 #define CAMERA_H
 
 #include "hittable.h"
+#include "color.h"
 
 
 class camera {
