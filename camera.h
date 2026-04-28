@@ -89,7 +89,8 @@ private:
 
         // 命中物体时根据法线返回可视化颜色。
         if (world.hit(r, interval(0, infinity), rec)) {
-            return 0.5 * (rec.normal + color(1,1,1));
+            vec3 direction = random_on_hemisphere(rec.normal);
+            return 0.5 * ray_color(ray(rec.p, direction),world);
         }
 
         // 未命中时返回天空渐变背景。

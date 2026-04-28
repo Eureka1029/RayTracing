@@ -22,6 +22,7 @@ inline double random_double(double min, double max) {
     return min + (max - min)*random_double(); //返回数值处于[min,max)
 }
 
+
 // Common Headers
 
 #include "color.h"

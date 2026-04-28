@@ -1,5 +1,5 @@
-
-#pragma once
+#ifndef HITTABLE_LIST_H
+#define HITTABLE_LIST_H
 
 //可击打物体列表
 
@@ -40,3 +40,5 @@ public:
     }
 
 };
+
+#endif

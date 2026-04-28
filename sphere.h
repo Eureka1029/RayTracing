@@ -1,4 +1,6 @@
-#pragma once
+#ifndef SPHERE_H
+#define SPHERE_H
+
 
 #include "hittable.h"
 #include "vec3.h"
@@ -40,3 +42,5 @@ private:
     double radius; //半径
     
 };
+
+#endif

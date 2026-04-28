@@ -1,5 +1,5 @@
-
-#pragma once
+#ifndef HITTABLE_H
+#define HITTABLE_H
 
 //为光线可能击中的任何物体创建一个“抽象类”
 #include "ray.h"
@@ -24,3 +24,5 @@ public:
 
     virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
 };
+
+#endif
