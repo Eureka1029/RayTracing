@@ -105,6 +105,7 @@ inline vec3 unit_vector(const vec3& v) {
     return v / v.length();
 }
 
+//生成一个随机单位向量
 inline vec3 random_unit_vector() {
     while(true){
         auto p = vec3::random(-1,1);
