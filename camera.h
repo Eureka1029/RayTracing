@@ -4,7 +4,7 @@
 
 #include "hittable.h"
 #include "color.h"
-
+#include "material.h"
 
 class camera {
 public:
@@ -93,8 +93,11 @@ private:
 
         // 命中物体时根据法线返回可视化颜色。
         if (world.hit(r, interval(0.001, infinity), rec)) {
-            vec3 direction = rec.normal + random_unit_vector(); //相当于对一个表面向量增加一个随机扰动
-            return 0.5 * ray_color(ray(rec.p, direction),depth-1, world);
+            ray scattered;
+            color attenuation;
+            if(rec.mat->scatter(r, rec, attenuation, scattered))
+                return attenuation * ray_color(scattered, depth-1, world);
+            return color(0,0,0);
         }
 
         // 未命中时返回天空渐变背景。

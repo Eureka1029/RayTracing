@@ -8,12 +8,47 @@ class material {
     public:
         virtual ~material() = default;
 
-        virtual bool scatter(
+        virtual bool scatter( 
             const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-        ) const {
+        ) const { // 入射光 hit记录 散射颜色  散射光
             return false;
         }
         
+};
+
+class lambertian : public material { //朗伯反射模型
+public:
+    lambertian(const color& albedo) : albedo(albedo) {};
+
+    bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
+    const override {
+        auto scatter_direction = rec.normal + random_unit_vector(); // 折射光方向,如果随机生成的向量正好和法向量相反则会产生严重的问题
+
+        if(scatter_direction.near_zero())
+            scatter_direction = rec.normal;
+
+        scattered = ray(rec.p, scatter_direction); //折射光
+        attenuation = albedo;
+        return true;
+    }
+private:
+    color albedo;
+
+};
+
+class metal : public material {
+public:
+    metal(const color& albedo) : albedo(albedo) {}
+bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
+    const override {
+        vec3 reflected = reflect(r_in.direction(), rec.normal); // 镜面反射方向
+        scattered = ray(rec.p, reflected);
+        attenuation = albedo;
+        return true;
+    }
+private:
+    color albedo;
+
 };
 
 #endif

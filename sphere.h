@@ -5,9 +5,11 @@
 #include "hittable.h"
 #include "vec3.h"
 
+
 class sphere : public hittable {
 public:
-    sphere(const point3& center, double radius) : center(center), radius(std::fmax(0, radius)) {
+    sphere(const point3& center, double radius, std::shared_ptr<material> mat) 
+    : center(center), radius(std::fmax(0, radius)) {
         // 需要初始化材质指针mat
     };
 
