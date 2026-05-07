@@ -52,4 +52,35 @@ private:
     double fuzz;
 };
 
+//介电材质
+class dielectric : public material {
+public:
+    dielectric(double refraction_index) : refraction_index(refraction_index) {}
+
+    bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
+    const override {
+        attenuation = color(1.0, 1.0, 1.0);
+        double ri = rec.front_face ? (1.0/refraction_index) : refraction_index; // 从空气射向物体和物体射向空气,求出折射率之比.
+
+        vec3 unit_direction = unit_vector(r_in.direction()); // 入射光线归一化
+        double cos_theta = std::fmin(dot(-unit_direction, rec.normal), 1.0); //求出cos
+        double sin_theta = std::sqrt(1.0 - cos_theta*cos_theta);
+
+        bool cannot_refract = ri * sin_theta > 1; // 决定了能不能折射
+        vec3 direction;
+
+        if(cannot_refract){
+            direction = reflect(unit_direction, rec.normal); //反射
+        }else{
+            direction = refract(unit_direction,rec.normal,ri); //折射
+        }
+
+
+        scattered = ray(rec.p, direction); 
+        return true;
+    }
+public:
+    double refraction_index;
+};
+
 #endif
