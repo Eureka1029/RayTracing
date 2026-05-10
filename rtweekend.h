@@ -3,7 +3,8 @@
 
 #include <vector>
 #include <limits>
-#include <cstdlib>
+// 多线程渲染时每个线程需要独立随机数生成器，避免共享 std::rand() 的状态。
+#include <random>
 // 项目公共基础头文件：集中放置全局常量和小工具函数，避免每个模块重复定义。
 // 这些内容会被向量、区间、相机等模块共同使用，是整个光线追踪程序的通用依赖。
 
@@ -20,7 +21,10 @@ inline double degrees_to_radians(double degrees) {
 
 // 生成 [0,1) 的随机浮点数；用于像素抗锯齿采样、材质随机散射和随机场景生成。
 inline double random_double() {
-    return std::rand() / (RAND_MAX + 1.0);
+    // thread_local 让每个线程都有自己的生成器和分布对象，避免多线程同时访问同一随机状态。
+    static thread_local std::mt19937 generator(std::random_device{}());
+    static thread_local std::uniform_real_distribution<double> distribution(0.0, 1.0);
+    return distribution(generator);
 }
 
 // 生成 [min,max) 的随机浮点数；让调用者能指定随机范围，例如随机颜色、粗糙度和球体位置。

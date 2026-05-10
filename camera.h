@@ -6,6 +6,12 @@
 #include "color.h"
 #include "material.h"
 
+// 多线程渲染需要用原子变量分配扫描线、用线程执行任务、用计时器统计耗时。
+#include <atomic>
+#include <chrono>
+#include <thread>
+
+
 // camera 负责把三维世界渲染成二维图像。
 // 它根据相机参数生成穿过每个像素的光线，并递归追踪光线颜色。
 class camera {
@@ -29,24 +35,78 @@ public:
     void render(const hittable& world) {
         initialize();
 
+        // steady_clock 不受系统时间调整影响，适合统计一次渲染的真实耗时。
+        auto render_start = std::chrono::steady_clock::now();
+
+        // framebuffer 保存整张图片的线性颜色结果。
+        // 多线程阶段只写这里，最后由主线程按 PPM 顺序统一输出，避免 stdout 乱序。
+        std::vector<color> framebuffer(image_width * image_height);
+        std::atomic<int> next_row{0}; // 下一条还没被线程领取的扫描线编号。
+        std::atomic<int> rows_done{0}; // 已经渲染完成的扫描线数量，用来显示进度。
+        
+        // 每个工作线程都会执行这个函数：不断领取一行、渲染一行，直到没有剩余行。
+        auto render_row = [this, &world, &framebuffer, &next_row, &rows_done]() {
+            while (true) {
+                // fetch_add 是原子操作，能保证不同线程拿到不同的扫描线编号。
+                int j = next_row.fetch_add(1);
+
+                if (j >= image_height) {
+                    break;
+                }
+
+                for (int i = 0; i < image_width; i++) {
+                    // 对同一像素做多次随机采样，累加后再乘以平均系数。
+                    color pixel_color(0, 0, 0);
+
+                    for (int sample = 0; sample < samples_per_pixel; sample++) {
+                        ray r = get_ray(i, j);
+                        pixel_color += ray_color(r, max_depth, world);
+                    }
+
+                    // 当前线程只写自己领取到的行，因此不会和其他线程写同一个像素。
+                    framebuffer[j * image_width + i] = pixel_samples_scale * pixel_color;
+                }
+
+                // 完成一行后更新进度；clog 用于日志，不会混入 cout 的 PPM 图片数据。
+                auto done = rows_done.fetch_add(1) + 1;
+                std::clog << "\r剩余扫描线: " << (image_height - done) << ' ' << std::flush;
+            }
+        };
+        
+        // 根据 CPU 支持的并发线程数创建工作线程；如果系统无法提供，就使用一个保守默认值。
+        auto worker_count = std::thread::hardware_concurrency();
+        if (worker_count == 0) {
+            worker_count = 4;
+        }
+
+        // 启动线程池。每个线程执行同一个 render_row，通过 next_row 动态领取任务。
+        std::vector<std::thread> workers;
+        workers.reserve(worker_count);
+
+        for (unsigned int t = 0; t < worker_count; t++) {
+            workers.emplace_back(render_row);
+        }
+        
+        // 等待所有工作线程渲染完成，确保 framebuffer 已经填满后再开始输出图片。
+        for (auto& worker : workers) {
+            worker.join();
+        }
+
         // PPM P3 文件头：告诉查看器图像格式、宽高和颜色最大值。
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-        // 逐行逐列遍历像素；每个像素会发射多条略有偏移的采样光线。
+        // 主线程按从上到下、从左到右的固定顺序输出，保证生成的 PPM 文件合法。
         for (int j = 0; j < image_height; j++) {
-            std::clog << "\r剩余扫描线: " << (image_height - j) << ' ' << std::flush;
             for (int i = 0; i < image_width; i++) {
-                // 累加该像素的所有采样颜色，最后统一乘以平均系数。
-                color pixel_color(0,0,0);
-                for(int sample = 0; sample < samples_per_pixel; sample++){
-                    ray r = get_ray(i, j);
-                    pixel_color += ray_color(r, max_depth,world);
-                }
-                write_color(std::cout, pixel_samples_scale * pixel_color);
+                write_color(std::cout, framebuffer[j * image_width + i]);
             }
         }
+        
+        // 输出本次渲染总耗时，包含多线程计算和最终写出 PPM 的时间。
+        auto render_end = std::chrono::steady_clock::now();
+        std::chrono::duration<double> render_time = render_end - render_start;
 
-        std::clog << "\r完成。                 \n";
+        std::clog << "渲染时间: " << render_time.count() << " 秒\n";
     }
 
 private:
