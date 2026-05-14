@@ -4,7 +4,7 @@
 #include "sphere.h"
 #include "camera.h"
 #include "material.h"
-
+#include "bvh.h"
 
 // 程序入口：负责搭建场景、配置相机，并启动渲染。
 // 真正的光线求交、材质散射和颜色输出分别由各个类完成，main 只组织整体流程。
@@ -60,6 +60,8 @@ int main() {
     auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
     world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
 
+    world = hittable_list(make_shared<bvh_node>(world));
+
     // camera 负责根据下面的参数发射光线，并把渲染结果写成 PPM 图片。
     camera cam;
 
@@ -79,6 +81,7 @@ int main() {
     // 景深参数：散焦角越大虚化越明显，对焦距离决定清晰平面的位置。
     cam.defocus_angle = 0.6;
     cam.focus_dist    = 10.0;
+
 
     // 启动渲染；结果写到标准输出，进度写到标准错误。
     cam.render(world);

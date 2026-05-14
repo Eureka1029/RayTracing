@@ -15,6 +15,11 @@ class interval {
     // 构造指定范围的区间；调用者可用它限制测试范围，例如 interval(0.001, infinity)。
     interval(double min, double max) : min(min), max(max) {}
 
+    interval(const interval& a, const interval& b){
+        min = a.min <= b.min ? a.min : b.min;
+        max = a.max >= b.max ? a.max : b.max;
+    }
+
     // 返回区间长度；可用于判断范围大小，虽然当前项目主要使用 contains/surrounds。
     double size() const {
         return max - min;
@@ -36,6 +41,14 @@ class interval {
         if(x > max) return max;
         return x;
     }
+
+    //根据给定量扩大区间.
+    interval expand(double delta) const {
+        auto padding = delta/2;
+        return interval(min - padding, max + padding);
+    }
+
+    
 
     // 常用区间常量：empty 表示空范围，universe 表示所有实数范围。
     static const interval empty, universe;

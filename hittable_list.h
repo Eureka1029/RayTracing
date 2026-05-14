@@ -2,7 +2,7 @@
 #define HITTABLE_LIST_H
 
 #include "hittable.h"
-
+#include "aabb.h"
 #include <memory>
 #include <vector>
 
@@ -28,6 +28,7 @@ public:
     // 添加一个可命中物体；场景构建阶段通过它把球体放进世界。
     void add(shared_ptr<hittable> object) {
         objects.push_back(object);
+        bbox = aabb(bbox, object->bounding_box());
     }
 
     // 遍历所有物体，寻找 ray_t 范围内离光线起点最近的命中点。
@@ -49,6 +50,10 @@ public:
         return hit_anything;
     }
 
+    aabb bounding_box() const override {return bbox;}
+
+private:
+    aabb bbox;
 };
 
 #endif

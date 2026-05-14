@@ -3,6 +3,7 @@
 
 #include "ray.h"
 #include "interval.h"
+#include "aabb.h"
 
 // 前向声明 material，避免在这里只为指针成员引入完整材质定义，减少头文件耦合。
 class material;
@@ -34,6 +35,8 @@ public:
 
     // 判断光线 r 在 ray_t 区间内是否击中物体，并把最近的有效命中写入 rec。
     virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
+
+    virtual aabb bounding_box() const = 0; //aabb包围盒
 };
 
 #endif

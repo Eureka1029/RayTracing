@@ -12,7 +12,10 @@ class sphere : public hittable {
 public:
     // 创建球体；半径被限制为非负数，材质指针决定球体表面的散射行为。
     sphere(const point3& center, double radius, std::shared_ptr<material> mat) 
-    : center(center), radius(std::fmax(0, radius)), mat(mat) {
+        : center(center), radius(std::fmax(0, radius)), mat(mat) 
+    {
+        auto rvec = vec3(radius,radius,radius); 
+        bbox = aabb(center - rvec, center + rvec); //创建包围盒
     };
 
     // 判断光线是否在指定 t 区间内击中球体。
@@ -52,10 +55,12 @@ public:
         
         return true;
     }
+    aabb bounding_box() const override { return bbox; }
 private:
     point3 center; // 球心位置：决定球体放在世界坐标中的哪里。
     double radius; // 球体半径：决定球体大小，也参与法线计算。
     std::shared_ptr<material> mat; // 材质指针：决定命中这个球后光线如何散射。
+    aabb bbox;
     
 };
 

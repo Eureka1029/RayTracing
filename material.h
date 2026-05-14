@@ -4,6 +4,7 @@
 #include "hittable.h"
 #include "color.h"
 
+
 // material 是材质抽象基类，定义光线命中表面后如何散射。
 // 不同材质通过实现 scatter() 决定新光线方向和颜色衰减，从而形成漫反射、金属和玻璃效果。
 class material {
