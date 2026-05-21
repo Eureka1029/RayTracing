@@ -5,6 +5,8 @@
 #include "camera.h"
 #include "material.h"
 #include "bvh.h"
+#include "texture.h" // 纹理支持：纯色、棋盘格等纹理类定义。
+
 
 // 程序入口：负责搭建场景、配置相机，并启动渲染。
 // 真正的光线求交、材质散射和颜色输出分别由各个类完成，main 只组织整体流程。
@@ -13,9 +15,10 @@ int main() {
     hittable_list world;
 
 
-    // 创建大地面：用一个半径很大的球体模拟平坦地面，材质为灰色漫反射。
-    auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
-    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
+    // 棋盘格纹理地面：用 checker_texture 替换纯色地面，scale 0.32 控制棋盘格大小。
+    auto checker = make_shared<checker_texture>(0.32, color(.2, .3, .1), color(.9, .9, .9));
+    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
+
 
     // 随机生成一片小球阵列，用不同材质测试漫反射、金属和玻璃的渲染效果。
     for (int a = -11; a < 11; a++) {

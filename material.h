@@ -3,7 +3,7 @@
 
 #include "hittable.h"
 #include "color.h"
-
+#include "texture.h" // 纹理支持：使 lambertian 材质支持纯色、棋盘格等纹理采样。
 
 // material 是材质抽象基类，定义光线命中表面后如何散射。
 // 不同材质通过实现 scatter() 决定新光线方向和颜色衰减，从而形成漫反射、金属和玻璃效果。
@@ -25,10 +25,14 @@ class material {
 
 // lambertian 表示理想漫反射材质。
 // 它把光线随机散射到法线附近的方向，用来模拟粗糙、无镜面高光的表面。
+// 支持纯色和纹理两种方式：传入 color 会自动包装为 solid_color 纹理。
 class lambertian : public material {
 public:
-    // albedo 是反照率，也就是材质保留下来的颜色比例。
-    lambertian(const color& albedo) : albedo(albedo) {};
+    // 纯色构造：将颜色自动包装为 solid_color 纹理，调用方无需手动创建纹理对象。
+    lambertian(const color& albedo) : tex(std::make_shared<solid_color>(albedo)) {}
+    // 纹理构造：直接传入 shared_ptr<texture>，支持棋盘格、图像等任意纹理。
+    lambertian(std::shared_ptr<texture> tex) : tex(tex) {}
+
 
     // 漫反射散射：在法线附近随机取一个方向，并让光线从命中点继续传播。
     bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
@@ -42,13 +46,14 @@ public:
 
         // 从命中点发出散射光线；attenuation 决定这次反弹保留多少颜色。
         scattered = ray(rec.p, scatter_direction);
-        attenuation = albedo;
+        // 从纹理中按 uv 坐标采样颜色作为本次散射衰减，替代原先固定的纯色 albedo。
+        attenuation = tex->value(rec.u, rec.v, rec.p);
         return true;
     }
 private:
-    // 材质固有颜色；每次反弹都会按这个颜色衰减光能。
-    color albedo;
-
+    // 材质纹理指针：通过 tex->value(u, v, p) 采样命中点颜色作为散射衰减。
+    // 使用 shared_ptr 让多个材质共享同一纹理实例，避免重复拷贝。
+    std::shared_ptr<texture> tex;
 };
 
 // metal 表示金属材质。
