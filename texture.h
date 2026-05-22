@@ -3,7 +3,7 @@
 
 #include"color.h"
 #include"vec3.h"
-
+#include"rtw_stb_image.h"
 // texture 是所有纹理的抽象基类。
 // 给定 uv 坐标和命中点，返回该点的颜色值，支持纯色、棋盘格、图像纹理等。
 class texture {
@@ -58,6 +58,32 @@ class checker_texture : public texture {
     double inv_scale; // 缩放系数的倒数：值越大格子越小，用于将世界坐标映射到棋盘格网格。
     std::shared_ptr<texture> even; // 偶数格纹理指针：多个物体可共享同一纹理实例。
     std::shared_ptr<texture> odd;  // 奇数格纹理指针：多个物体可共享同一纹理实例。
+};
+
+
+    
+class image_texture : public texture {
+  public:
+    image_texture(const char* filename) : image(filename) {}
+
+    color value(double u, double v, const point3& p) const override {
+        // 没有纹理数据时返回纯青色，方便调试。
+        if (image.height() <= 0) return color(0,1,1);
+
+        // 将纹理坐标限制在 [0,1] 范围内。
+        u = interval(0,1).clamp(u);
+        v = 1.0 - interval(0,1).clamp(v);  // 翻转 V 坐标以匹配图像坐标系。
+
+        auto i = int(u * image.width());
+        auto j = int(v * image.height());
+        auto pixel = image.pixel_data(i,j);
+
+        auto color_scale = 1.0 / 255.0;
+        return color(color_scale*pixel[0], color_scale*pixel[1], color_scale*pixel[2]);
+    }
+
+  private:
+    rtw_image image;
 };
 
 #endif

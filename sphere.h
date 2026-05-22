@@ -51,17 +51,33 @@ public:
         rec.p = r.at(rec.t);
         vec3 outward_normal = (rec.p - center) / radius;
         rec.set_face_normal(r, outward_normal);
+        get_sphere_uv(outward_normal, rec.u, rec.v);
         rec.mat = mat;
         
         return true;
     }
+
     aabb bounding_box() const override { return bbox; }
 private:
     point3 center; // 球心位置：决定球体放在世界坐标中的哪里。
     double radius; // 球体半径：决定球体大小，也参与法线计算。
     std::shared_ptr<material> mat; // 材质指针：决定命中这个球后光线如何散射。
     aabb bbox;
-    
+
+    // 计算球体表面上一点的纹理坐标 (u, v)，用于纹理映射。
+    // p: 单位球面上的点（球心在原点、半径为 1）。
+    // u: 返回值 [0,1]，表示绕 Y 轴的角度，从 X=-1 开始。
+    // v: 返回值 [0,1]，表示从 Y=-1 到 Y=+1 的角度。
+    //     <1 0 0> 对应 <0.50 0.50>     <-1  0  0> 对应 <0.00 0.50>
+    //     <0 1 0> 对应 <0.50 1.00>     < 0 -1  0> 对应 <0.50 0.00>
+    //     <0 0 1> 对应 <0.25 0.50>     < 0  0 -1> 对应 <0.75 0.50>
+    static void get_sphere_uv(const point3& p, double& u, double& v) {
+        auto theta = std::acos(-p.y());
+        auto phi = std::atan2(-p.z(), p.x()) + pi;
+
+        u = phi / (2*pi);
+        v = theta / pi;
+    }
 };
 
 #endif

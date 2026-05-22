@@ -8,9 +8,11 @@
 #include "texture.h" // 纹理支持：纯色、棋盘格等纹理类定义。
 
 
-// 程序入口：负责搭建场景、配置相机，并启动渲染。
-// 真正的光线求交、材质散射和颜色输出分别由各个类完成，main 只组织整体流程。
-int main() {
+
+
+// bouncing_spheres：场景1——随机散布的弹跳小球。
+// 使用大量随机球体展示漫反射、金属和玻璃材质效果。
+void bouncing_spheres() {
     // world 是场景容器；所有球体都会加入这里，相机渲染时只查询这个统一对象。
     hittable_list world;
 
@@ -88,4 +90,62 @@ int main() {
 
     // 启动渲染；结果写到标准输出，进度写到标准错误。
     cam.render(world);
+}
+
+
+// checkered_spheres：场景2——棋盘格纹理球体。
+// 两个大球使用棋盘格纹理展示纹理映射效果。
+void checkered_spheres() {
+    hittable_list world;
+
+    auto checker = make_shared<checker_texture>(0.32, color(.2, .3, .1), color(.9, .9, .9));
+
+    world.add(make_shared<sphere>(point3(0,-10, 0), 10, make_shared<lambertian>(checker)));
+    world.add(make_shared<sphere>(point3(0, 10, 0), 10, make_shared<lambertian>(checker)));
+
+    camera cam;
+
+    cam.aspect_ratio      = 16.0 / 9.0;
+    cam.image_width       = 400;
+    cam.samples_per_pixel = 100;
+    cam.max_depth         = 50;
+
+    cam.vfov     = 20;
+    cam.lookfrom = point3(13,2,3);
+    cam.lookat   = point3(0,0,0);
+    cam.vup      = vec3(0,1,0);
+
+    cam.defocus_angle = 0;
+
+    cam.render(world);
+}
+
+void earth() {
+    auto earth_texture = make_shared<image_texture>("earthmap.jpg");
+    auto earth_surface = make_shared<lambertian>(earth_texture);
+    auto globe = make_shared<sphere>(point3(0,0,0), 2, earth_surface);
+
+    camera cam;
+
+    cam.aspect_ratio      = 16.0 / 9.0;
+    cam.image_width       = 400;
+    cam.samples_per_pixel = 100;
+    cam.max_depth         = 50;
+
+    cam.vfov     = 20;
+    cam.lookfrom = point3(0,0,12);
+    cam.lookat   = point3(0,0,0);
+    cam.vup      = vec3(0,1,0);
+
+    cam.defocus_angle = 0;
+
+    cam.render(hittable_list(globe));
+}
+
+int main() {
+    switch (3) {
+        case 1:  bouncing_spheres();  break;
+        case 2:  checkered_spheres(); break;
+        case 3:  earth();             break;
+    }
 }
