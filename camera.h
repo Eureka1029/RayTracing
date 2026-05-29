@@ -20,6 +20,7 @@ public:
     int    image_width  = 100;  // 输出图像宽度（像素），也是渲染分辨率的主要控制项。
     int    samples_per_pixel = 10; // 每个像素的随机采样数量，用来抗锯齿和降低蒙特卡洛噪点。
     int    max_depth = 10; // 最大递归反弹次数，防止光线在镜面或玻璃间无限追踪。
+    color  background;  //背景颜色
 
     double vfov = 90; // 垂直视场角，决定画面能看到多大的上下范围
     point3 lookfrom = point3(0,0,0); // 相机位置，也就是光线默认发出的点
@@ -201,20 +202,26 @@ private:
         if(depth <= 0)
             return color(0,0,0);
 
-        // 用 0.001 作为最小 t，避免散射光线从表面出发后立刻再次击中同一表面。
-        if (world.hit(r, interval(0.001, infinity), rec)) {
-            ray scattered;
-            color attenuation;
-            // 材质决定散射方向和颜色衰减；递归结果乘以衰减得到最终反弹贡献。
-            if(rec.mat->scatter(r, rec, attenuation, scattered))
-                return attenuation * ray_color(scattered, depth-1, world);
-            return color(0,0,0);
-        }
+        // 如果光线没有击中物体,返回背景颜色
+        if (!world.hit(r, interval(0.001, infinity), rec)) 
+            return background;
 
-        // 未命中时返回天空渐变背景。
-        vec3 unit_direction = unit_vector(r.direction());
-        auto a = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+        // scattered 保存材质散射出的下一条光线，attenuation 表示本次散射后的颜色衰减。
+        ray scattered;
+        color attenuation;
+
+        // 先取材质自身发出的光；普通材质通常返回黑色，光源材质会返回发光颜色。
+        color color_from_emission = rec.mat->emitted(rec.u,rec.v,rec.p);
+
+        // 如果材质不散射光线，说明递归在这里结束，只返回自发光部分。
+        if(!rec.mat->scatter(r, rec, attenuation, scattered))
+            return color_from_emission;
+        
+        // 递归追踪散射光线，并乘以材质衰减，得到反射/折射带来的间接光。
+        color color_from_scatter = attenuation * ray_color(scattered, depth - 1, world);
+
+        // 最终颜色 = 材质自身发光 + 散射光线继续追踪得到的颜色。
+        return color_from_emission + color_from_scatter;
     }
 };
 

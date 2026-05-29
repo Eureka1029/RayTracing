@@ -12,6 +12,10 @@ class material {
         // 虚析构函数：保证通过基类指针释放派生材质时行为正确。
         virtual ~material() = default;
 
+        virtual color emitted(double u, double v, const point3& p) const {
+            return color(0,0,0);
+        }
+
         // scatter 计算一次命中后的散射结果。
         // r_in 是入射光，rec 是命中信息，attenuation 是颜色衰减，scattered 是下一条光线。
         // 返回 false 表示光线被吸收，递归追踪到此结束。
@@ -20,6 +24,7 @@ class material {
         ) const {
             return false;
         }
+
         
 };
 
@@ -128,6 +133,22 @@ public:
         r0 = r0 * r0;
         return r0 + (1 - r0) * std::pow((1-cosine),5);
     }
+};
+
+//自发光材质
+class diffuse_light : public material {
+  public:
+    diffuse_light(std::shared_ptr<texture> tex) : tex(tex) {} //纹理作为发光颜色
+    diffuse_light(const color& emit) : tex(std::make_shared<solid_color>(emit)) {}  //传入颜色包装为纯色纹理
+
+
+    // 物体本身发出的光
+    color emitted(double u, double v, const point3& p) const override {
+        return tex->value(u, v, p);
+    }
+
+  private:
+    std::shared_ptr<texture> tex;
 };
 
 #endif
