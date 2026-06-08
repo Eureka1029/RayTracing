@@ -60,4 +60,13 @@ const interval interval::empty    = interval(+infinity, -infinity);
 // 全区间：作为“不限制范围”的默认工具值。
 const interval interval::universe = interval(-infinity, +infinity);
 
+
+interval operator+(const interval& ival, double displacement) {
+    return interval(ival.min + displacement, ival.max + displacement);
+}
+
+interval operator+(double displacement, const interval& ival) {
+    return ival + displacement;
+}
+
 #endif

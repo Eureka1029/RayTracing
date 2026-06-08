@@ -41,4 +41,37 @@ public:
     virtual aabb bounding_box() const = 0; //aabb包围盒
 };
 
+class translate : public hittable {
+  public:
+    // translate 是一个“包装器”物体：它不改变原物体形状，只把原物体整体平移 offset。
+    translate(std::shared_ptr<hittable> object, const vec3& offset)
+        : object(object), offset(offset)
+    {
+        // 原物体的包围盒也要同步平移，方便 BVH 等加速结构继续使用正确的空间范围。
+        bbox = object->bounding_box() + offset;
+    }
+
+    bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+        // 把光线反向平移 offset，相当于把“平移后的物体”临时还原到原来的位置做求交。
+        ray offset_r(r.origin() - offset, r.direction());
+
+        // 在原物体的局部位置上检测 offset_r 是否命中。
+        if (!object->hit(offset_r, ray_t, rec))
+            return false;
+
+        // object->hit 得到的是原物体坐标下的交点，需要再平移回世界坐标。
+        rec.p += offset;
+
+        return true;
+    }
+
+    // 返回已经平移过的包围盒。
+    aabb bounding_box() const override { return bbox; }
+
+  private:
+    std::shared_ptr<hittable> object; // 被包装、被平移的原始物体。
+    vec3 offset; // 平移向量，表示原物体整体移动的方向和距离。
+    aabb bbox; // 平移后的轴对齐包围盒。
+};
+
 #endif
